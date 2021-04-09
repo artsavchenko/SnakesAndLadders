@@ -1,9 +1,12 @@
 package com.snakesladders.snakesladders.controller;
 
 import com.snakesladders.snakesladders.enums.Messages;
+import com.snakesladders.snakesladders.service.GameService;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
@@ -12,8 +15,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest
+@WebMvcTest(GameController.class)
 public class GameControllerTest {
+    @MockBean
+    GameService gameServiceMock;
+
     @Autowired
     MockMvc mockMvc;
 
@@ -25,6 +31,8 @@ public class GameControllerTest {
 
     @Test
     public void initializeGame() throws Exception {
+        Mockito.when(gameServiceMock.initializeGame(Mockito.anyString(), Mockito.anyInt())).thenReturn(Messages.INITIALIZE.getMessage());
+
         this.mockMvc.perform(get("/game/initialize/testPlayer/5")).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().string(containsString(Messages.INITIALIZE.getMessage())));
 
@@ -34,6 +42,8 @@ public class GameControllerTest {
 
     @Test
     public void rollDice() throws Exception {
+        Mockito.when(gameServiceMock.rollDice()).thenReturn(Messages.DICE_RESULT.getMessage()).thenReturn(Messages.NOT_INITIALIZED.getMessage());
+
         this.mockMvc.perform(get("/game/roll_dice")).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().string(containsString(Messages.DICE_RESULT.getMessage())));
 
@@ -43,6 +53,8 @@ public class GameControllerTest {
 
     @Test
     public void clear() throws Exception {
+        Mockito.when(gameServiceMock.clear()).thenReturn(Messages.GAME_CLEAR.getMessage()).thenReturn(Messages.NOT_INITIALIZED.getMessage());
+
         this.mockMvc.perform(get("/game/clear")).andDo(print()).andExpect(status().isOk())
                 .andExpect(content().string(containsString(Messages.GAME_CLEAR.getMessage())));
 
