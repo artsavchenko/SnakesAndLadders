@@ -17,7 +17,18 @@ public class Player {
         return position;
     }
 
-    public void setPosition (int position) {
+    public void setPosition(int position) {
         this.position = position;
+    }
+
+    public boolean equals(Object obj) {
+        if (obj == null || this.getClass() != obj.getClass()) {
+            return false;
+        } else if (obj == this) {
+            return true;
+        } else {
+            Player player = (Player) obj;
+            return player.getPosition() == this.position && player.getPlayerName().equals(this.playerName);
+        }
     }
 }

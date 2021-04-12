@@ -1,9 +1,6 @@
 package com.snakesladders.snakesladders.model;
 
-import com.snakesladders.snakesladders.enums.Messages;
-
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class Board {
     Map<Integer, Integer> snakes;
@@ -23,20 +20,18 @@ public class Board {
     }
 
     @Override
-    public String toString() {
-        return Messages.LADDERS.getMessage() + ladders.entrySet().stream().map(e -> e.getKey()+"->"+e.getValue()).collect(Collectors.joining("; "))
-                + "\n" + Messages.SNAKES.getMessage() + snakes.entrySet().stream().map(e -> e.getKey()+"->"+e.getValue()).collect(Collectors.joining("; "));
+    public boolean equals(Object obj) {
+        if (obj == null || this.getClass() != obj.getClass()) {
+            return false;
+        } else if (obj == this) {
+            return true;
+        } else {
+            Board board = (Board) obj;
+            return board.getLadders().size() == this.ladders.size() &&
+                    board.getLadders().entrySet().stream().allMatch(e -> e.getValue().equals(this.ladders.get(e.getKey()))) &&
+                    board.getSnakes().size() == this.snakes.size() &&
+                    board.getSnakes().entrySet().stream().allMatch(e -> e.getValue().equals(this.snakes.get(e.getKey())));
+        }
     }
-
-
-
-
-
-
-
-
-
-
-
 
 }
