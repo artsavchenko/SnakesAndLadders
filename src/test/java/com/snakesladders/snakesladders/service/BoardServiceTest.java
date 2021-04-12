@@ -11,7 +11,7 @@ public class BoardServiceTest {
 
     @BeforeEach
     public void init() {
-       this.boardService = new BoardService();
+        this.boardService = new BoardService();
     }
 
     @Test

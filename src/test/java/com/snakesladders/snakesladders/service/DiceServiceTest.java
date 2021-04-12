@@ -9,6 +9,6 @@ public class DiceServiceTest {
     @Test
     public void rollDice() {
         Assertions.assertTrue(diceService.rollDice() > 0);
-        Assertions.assertTrue(diceService.rollDice() <=6);
+        Assertions.assertTrue(diceService.rollDice() <= 6);
     }
 }

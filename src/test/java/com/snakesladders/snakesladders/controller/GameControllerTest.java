@@ -1,6 +1,10 @@
 package com.snakesladders.snakesladders.controller;
 
-import com.snakesladders.snakesladders.enums.Messages;
+import com.snakesladders.snakesladders.exceptions.BadFormatException;
+import com.snakesladders.snakesladders.exceptions.GameNotFoundException;
+import com.snakesladders.snakesladders.model.Board;
+import com.snakesladders.snakesladders.model.Game;
+import com.snakesladders.snakesladders.model.Player;
 import com.snakesladders.snakesladders.service.GameService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -9,10 +13,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.hamcrest.Matchers.containsString;
+import java.util.HashMap;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(GameController.class)
@@ -24,41 +29,42 @@ public class GameControllerTest {
     MockMvc mockMvc;
 
     @Test
-    public void showInstructions() throws Exception {
-        this.mockMvc.perform(get("/")).andDo(print()).andExpect(status().isOk())
-                .andExpect(content().string(containsString(Messages.START_INSTRUCTION.getMessage())));
+    public void getCurrentGame() throws Exception {
+        Game game = new Game(new Player("testPlayer"), new Board(new HashMap<>(), new HashMap<>()));
+        Mockito.when(gameServiceMock.getGame()).thenReturn(game).thenThrow(new GameNotFoundException());
+
+        this.mockMvc.perform(get("/game")).andDo(print()).andExpect(status().isOk());
+        this.mockMvc.perform(get("/game")).andDo(print()).andExpect(status().isNotFound());
     }
 
     @Test
     public void initializeGame() throws Exception {
-        Mockito.when(gameServiceMock.initializeGame(Mockito.anyString(), Mockito.anyInt())).thenReturn(Messages.INITIALIZE.getMessage());
+        Game game = new Game(new Player("testPlayer"), new Board(new HashMap<>(), new HashMap<>()));
+        Mockito.when(gameServiceMock.initializeGame(Mockito.anyString(), Mockito.anyInt())).thenThrow(new BadFormatException()).thenReturn(game);
 
-        this.mockMvc.perform(get("/game/initialize/testPlayer/5")).andDo(print()).andExpect(status().isOk())
-                .andExpect(content().string(containsString(Messages.INITIALIZE.getMessage())));
+        this.mockMvc.perform(post("/game/initialize/testPlayer/15")).andDo(print()).andExpect(status().isBadRequest());
 
-        this.mockMvc.perform(get("/game/initialize/testPlayer/test")).andDo(print()).andExpect(status().isBadRequest())
-                .andExpect(content().string(containsString(String.format(Messages.WRONG_LEVEL.getMessage(), Messages.START_INSTRUCTION.getMessage()))));
+        this.mockMvc.perform(post("/game/initialize/testPlayer/5")).andDo(print()).andExpect(status().isOk());
+
+        this.mockMvc.perform(post("/game/initialize/testPlayer/test")).andDo(print()).andExpect(status().isBadRequest());
     }
 
     @Test
-    public void rollDice() throws Exception {
-        Mockito.when(gameServiceMock.rollDice()).thenReturn(Messages.DICE_RESULT.getMessage()).thenReturn(Messages.NOT_INITIALIZED.getMessage());
+    public void playGame() throws Exception {
+        Game game = new Game(new Player("testPlayer"), new Board(new HashMap<>(), new HashMap<>()));
+        Mockito.when(gameServiceMock.playGame()).thenReturn(game).thenThrow(new GameNotFoundException());
 
-        this.mockMvc.perform(get("/game/roll_dice")).andDo(print()).andExpect(status().isOk())
-                .andExpect(content().string(containsString(Messages.DICE_RESULT.getMessage())));
+        this.mockMvc.perform(post("/game/play_game")).andDo(print()).andExpect(status().isOk());
 
-        this.mockMvc.perform(get("/game/roll_dice")).andDo(print()).andExpect(status().isNotFound())
-                .andExpect(content().string(containsString(Messages.NOT_INITIALIZED.getMessage())));
+        this.mockMvc.perform(post("/game/play_game")).andDo(print()).andExpect(status().isNotFound());
     }
 
     @Test
     public void clear() throws Exception {
-        Mockito.when(gameServiceMock.clear()).thenReturn(Messages.GAME_CLEAR.getMessage()).thenReturn(Messages.NOT_INITIALIZED.getMessage());
+        Mockito.doNothing().when(gameServiceMock).clear();
+        this.mockMvc.perform(post("/game/clear")).andDo(print()).andExpect(status().isOk());
 
-        this.mockMvc.perform(get("/game/clear")).andDo(print()).andExpect(status().isOk())
-                .andExpect(content().string(containsString(Messages.GAME_CLEAR.getMessage())));
-
-        this.mockMvc.perform(get("/game/clear")).andDo(print()).andExpect(status().isNotFound())
-                .andExpect(content().string(containsString(Messages.NOT_INITIALIZED.getMessage())));
+        Mockito.doThrow(new GameNotFoundException()).when(gameServiceMock).clear();
+        this.mockMvc.perform(post("/game/clear")).andDo(print()).andExpect(status().isNotFound());
     }
 }

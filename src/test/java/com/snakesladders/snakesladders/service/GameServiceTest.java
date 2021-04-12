@@ -1,9 +1,13 @@
 package com.snakesladders.snakesladders.service;
 
-import com.snakesladders.snakesladders.enums.Messages;
+import com.snakesladders.snakesladders.exceptions.BadFormatException;
+import com.snakesladders.snakesladders.exceptions.GameNotFoundException;
 import com.snakesladders.snakesladders.model.Board;
+import com.snakesladders.snakesladders.model.Game;
+import com.snakesladders.snakesladders.model.Player;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -32,60 +36,86 @@ public class GameServiceTest {
     }
 
     @Test
-    public void initializeGame() {
+    public void initializeGame() throws BadFormatException {
         Map<Integer, Integer> ladders = new HashMap<>();
-        ladders.put(10,20);
+        ladders.put(10, 20);
         ladders.put(25, 99);
         Map<Integer, Integer> snakes = new HashMap<>();
-        snakes.put(55,3);
+        snakes.put(55, 3);
         snakes.put(99, 89);
-        Board board = new Board(ladders,snakes);
+        Board board = new Board(ladders, snakes);
 
         Mockito.when(boardServiceMock.initializeBoard(Mockito.anyInt())).thenReturn(board);
 
-        String result = gameService.initializeGame("testName", 2);
-        Assertions.assertEquals(String.format(Messages.INITIALIZE.getMessage(), "testName", board.toString(), 1), result);
+        Game result = gameService.initializeGame("testPlayer", 2);
+        Assertions.assertEquals(new Game(new Player("testPlayer"), new Board(ladders, snakes)), result);
+    }
 
-        result = gameService.initializeGame("testName", 0);
-        Assertions.assertEquals(String.format(Messages.WRONG_LEVEL_RANGE.getMessage(), 0, Messages.START_INSTRUCTION.getMessage()), result);
+    @Test(expected = BadFormatException.class)
+    public void initializeGameException() throws BadFormatException {
+        gameService.initializeGame("testPlayer", 0);
     }
 
     @Test
-    public void rollDice() {
+    public void playGame() throws BadFormatException, GameNotFoundException {
         Map<Integer, Integer> ladders = new HashMap<>();
-        ladders.put(10,20);
+        ladders.put(10, 20);
         ladders.put(25, 99);
         Map<Integer, Integer> snakes = new HashMap<>();
-        snakes.put(55,3);
+        snakes.put(55, 3);
         snakes.put(99, 89);
-        Board board = new Board(ladders,snakes);
+        Board board = new Board(ladders, snakes);
 
         Mockito.when(boardServiceMock.initializeBoard(Mockito.anyInt())).thenReturn(board);
-        gameService.initializeGame("testName", 2);
+        gameService.initializeGame("testPlayer", 2);
 
         Mockito.when(diceServiceMock.rollDice()).thenReturn(2);
 
-        String result = gameService.rollDice();
-        Assertions.assertEquals(String.format("%s %s %s", String.format(Messages.DICE_RESULT.getMessage(), 2), "", String.format(Messages.NEW_POSITION.getMessage(), "testName", 3)), result);
+        Game result = gameService.playGame();
+        Assertions.assertEquals(3, result.getPlayer().getPosition());
+        Assertions.assertEquals(2, result.getDice());
+    }
+
+    @Test(expected = GameNotFoundException.class)
+    public void playGameException() throws GameNotFoundException {
+        gameService.playGame();
+    }
+
+    @Test(expected = GameNotFoundException.class)
+    public void clear() throws GameNotFoundException, BadFormatException {
+        Map<Integer, Integer> ladders = new HashMap<>();
+        ladders.put(10, 20);
+        ladders.put(25, 99);
+        Map<Integer, Integer> snakes = new HashMap<>();
+        snakes.put(55, 3);
+        snakes.put(99, 89);
+        Board board = new Board(ladders, snakes);
+
+        Mockito.when(boardServiceMock.initializeBoard(Mockito.anyInt())).thenReturn(board);
+        gameService.initializeGame("testPlayer", 2);
+
+        gameService.clear();
+        gameService.clear();
     }
 
     @Test
-    public void clear() {
+    public void getGame() throws BadFormatException, GameNotFoundException {
         Map<Integer, Integer> ladders = new HashMap<>();
-        ladders.put(10,20);
+        ladders.put(10, 20);
         ladders.put(25, 99);
         Map<Integer, Integer> snakes = new HashMap<>();
-        snakes.put(55,3);
+        snakes.put(55, 3);
         snakes.put(99, 89);
-        Board board = new Board(ladders,snakes);
+        Board board = new Board(ladders, snakes);
 
         Mockito.when(boardServiceMock.initializeBoard(Mockito.anyInt())).thenReturn(board);
-        gameService.initializeGame("testName", 2);
+        Game expected = gameService.initializeGame("testPlayer", 2);
+        Game result = gameService.getGame();
+        Assertions.assertEquals(expected, result);
+    }
 
-        String result = gameService.clear();
-        Assertions.assertEquals(String.format(Messages.GAME_CLEAR.getMessage(), Messages.START_INSTRUCTION.getMessage()), result);
-
-        result = gameService.clear();
-        Assertions.assertEquals(String.format(Messages.NOT_INITIALIZED.getMessage(), Messages.START_INSTRUCTION.getMessage()), result);
+    @Test(expected = GameNotFoundException.class)
+    public void getGameException() throws BadFormatException, GameNotFoundException {
+        gameService.getGame();
     }
 }
