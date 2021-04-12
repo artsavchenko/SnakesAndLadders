@@ -1,54 +1,56 @@
 package com.snakesladders.snakesladders.controller;
 
-import com.snakesladders.snakesladders.enums.Messages;
+import com.snakesladders.snakesladders.exceptions.BadFormatException;
+import com.snakesladders.snakesladders.exceptions.GameNotFoundException;
+import com.snakesladders.snakesladders.model.Game;
 import com.snakesladders.snakesladders.service.GameService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
-@Controller
-@RequestMapping(value = "/")
+@RestController
+@RequestMapping(value = "/game")
 public class GameController {
     @Autowired
     GameService gameService;
 
     @GetMapping
-    public @ResponseBody ResponseEntity showInstructions() {
-        return new ResponseEntity(Messages.START_INSTRUCTION.getMessage(), HttpStatus.OK) ;
-    }
-
-    @GetMapping(value = "game/initialize/{playerName}/{level}")
-    public @ResponseBody ResponseEntity initializeGame (@PathVariable String playerName,
-                                                @PathVariable String level) {
+    public ResponseEntity<Game> getCurrentGame() {
         try {
-            return new ResponseEntity(gameService.initializeGame(playerName, Integer.parseInt(level)), HttpStatus.OK);
-        } catch (NumberFormatException e) {
-            return new ResponseEntity(String.format(Messages.WRONG_LEVEL.getMessage(), Messages.START_INSTRUCTION.getMessage()), HttpStatus.BAD_REQUEST);
+            Game game = gameService.getGame();
+            return new ResponseEntity<>(game, HttpStatus.OK);
+        } catch (GameNotFoundException ex) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         }
     }
 
-    @GetMapping(value = "game/roll_dice")
-    public @ResponseBody ResponseEntity rollDice() {
-        String result = gameService.rollDice();
-        if (result.contains(Messages.NOT_INITIALIZED.getMessage().split("!")[0])){
-            return new ResponseEntity(result, HttpStatus.NOT_FOUND);
-        } else {
-            return new ResponseEntity(result, HttpStatus.OK);
+    @PostMapping(value = "/initialize/{playerName}/{level}")
+    public ResponseEntity<Game> initializeGame(@PathVariable String playerName,
+                                               @PathVariable String level) {
+        try {
+            return new ResponseEntity<>(gameService.initializeGame(playerName, Integer.parseInt(level)), HttpStatus.OK);
+        } catch (NumberFormatException | BadFormatException ex) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
     }
 
-    @GetMapping(value = "game/clear")
-    public @ResponseBody ResponseEntity clear() {
-        String result = gameService.clear();
-        if (result.contains(Messages.NOT_INITIALIZED.getMessage().split("!")[0])){
-            return new ResponseEntity(result, HttpStatus.NOT_FOUND);
-        } else {
-            return new ResponseEntity(result, HttpStatus.OK);
+    @PostMapping(value = "/play_game")
+    public ResponseEntity<Game> playGame() {
+        try {
+            return new ResponseEntity<>(gameService.playGame(), HttpStatus.OK);
+        } catch (GameNotFoundException ex) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @PostMapping(value = "/clear")
+    public ResponseEntity<HttpStatus> clear() {
+        try {
+            gameService.clear();
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (GameNotFoundException ex) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 }
